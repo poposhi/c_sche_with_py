@@ -78,12 +78,12 @@ namespace c_sche_with_py
             string[] ESS = System.IO.File.ReadAllLines(@"C:\Users\johnny\source\repos\c_sche_with_py\c_sche_with_py\python\0ESS.txt");
             string[] PV = System.IO.File.ReadAllLines(@"C:\Users\johnny\source\repos\c_sche_with_py\c_sche_with_py\python\0PV.txt");
             string[] SOC = System.IO.File.ReadAllLines(@"C:\Users\johnny\source\repos\c_sche_with_py\c_sche_with_py\python\0SOC.txt");
-            
+
             float[] dg_int = new float[DG.Count()];
             float[] ESS_int = new float[ESS.Count()];
             float[] PV_int = new float[PV.Count()];
             float[] SOC_int = new float[SOC.Count()];
-            
+
             for (int i = 0; i < 24; i++)
             {
                 dg_int[i] = float.Parse(DG[i]);
@@ -98,7 +98,7 @@ namespace c_sche_with_py
         DateTime time1 = DateTime.Now;
         //做 start end物件 
         public static List<Start_End> sche_obj = new List<Start_End>();
-
+        public static List<sche_element> sche_ele = new List<sche_element>();
         #endregion
         private void button3_Click(object sender, EventArgs e)
         {
@@ -107,7 +107,7 @@ namespace c_sche_with_py
             timer_sche.Enabled = true;
             //讀取文字檔案 
             //讀取每一行 放到float array  
-            
+
             string[] DG = System.IO.File.ReadAllLines(@"C:\Users\johnny\source\repos\c_sche_with_py\c_sche_with_py\python\0DG.txt");
             string[] ESS = System.IO.File.ReadAllLines(@"C:\Users\johnny\source\repos\c_sche_with_py\c_sche_with_py\python\0ESS.txt");
             string[] PV = System.IO.File.ReadAllLines(@"C:\Users\johnny\source\repos\c_sche_with_py\c_sche_with_py\python\0PV.txt");
@@ -128,12 +128,13 @@ namespace c_sche_with_py
                 ESS_int[i] = float.Parse(ESS[i]);
                 PV_int[i] = float.Parse(PV[i]);
                 SOC_int[i] = float.Parse(SOC[i]);
-                sche_obj.Add(new Start_End(starttime, endtime, 0, dg_int[i], ESS_int[i], PV_int[i], SOC_int[i], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+                //sche_obj.Add(new Start_End(starttime, endtime, 0, dg_int[i], ESS_int[i], PV_int[i], SOC_int[i], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+                sche_ele.Add(new sche_element(starttime, endtime, dg_int[i], SOC_int[i], PV_int[i], ESS_int[i]));
                 starttime = starttime.AddSeconds(3);
                 endtime = endtime.AddSeconds(3);
             }
 
-            
+
 
 
             #endregion
@@ -165,6 +166,61 @@ namespace c_sche_with_py
                     MessageBox.Show("Error");
                 }
          */
+
+        //寫物件 可以比較 可存時間 變數 
+        public class sche_element : IComparable<sche_element>
+        {
+            public DateTime start_time { get; set; }
+            public DateTime end_time { get; set; }
+            public double dg { get; set; }
+            private double Soc { get; set; }
+            public double pv { get; set; }
+            public double ess { get; set; }
+            public double soc
+            {
+                get { return Soc; }
+                set
+                {
+                    if (value > 0)
+                        Soc = value;
+                    else
+                    { Debug.Print("soc error(minus)"); }
+                }
+            }
+            public sche_element(DateTime start_time, DateTime end_time, double dg,double soc,double pv, double ess)
+            {
+                this.start_time = start_time;
+                this.end_time = end_time;
+                this.dg = dg;
+                this.soc = soc;
+                this.pv = pv;
+                this.ess = ess;
+                
+            }
+            //假如比較的話會吐出一個例外 
+            int IComparable<sche_element>.CompareTo(sche_element other)
+            {
+                //throw new NotImplementedException();
+                return start_time.CompareTo(other.start_time);
+            }
+        }
+
+        public class SchComparer : IComparer<sche_element>
+        {
+            //實作Compare方法 
+            public int Compare(sche_element x, sche_element y) //比較子傳兩個物件進去輸出一個整數 
+            {
+                if (x.start_time > y.start_time)
+                    return 1;
+                if (x.start_time < y.start_time)
+                    return -1;
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+
         public class Start_End : IComparable<Start_End>
         {
 
@@ -338,14 +394,14 @@ namespace c_sche_with_py
         private void timer_sche_Tick(object sender, EventArgs e)
         {
             #region 排程輸出測試 3
-            foreach (var item1 in sche_obj)
+            foreach (var item1 in sche_ele)
             {
                 //if 時間對 就輸出 
-                if (item1.End_Time > DateTime.Now && DateTime.Now >= item1.Start_time)
+                if (item1.end_time > DateTime.Now && DateTime.Now >= item1.start_time)
                 {
 
-                    Debug.Print(DateTime.Now.ToString()+" "+ item1.Fixed_P.ToString());
-                    
+                    Debug.Print(DateTime.Now.ToString() + " " + item1.dg.ToString() +" "+item1.soc.ToString());
+
                 }
 
 
